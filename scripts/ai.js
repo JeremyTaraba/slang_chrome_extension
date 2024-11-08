@@ -1,21 +1,12 @@
 
 var summaryText = document.getElementById("summary");
 
-
-
 async function summary (){
   document.getElementById("progress").innerHTML = "Getting Model...";
   // if first time using then will need to download model
   try {
-    const summarizer2 = await ai.summarizer.create({
-      sharedContext: "An article from the Daily Economic News magazine",
-      type: "headline",
-      length: "short"
-    });
-    const summarizer = await ai.summarizer.create({
-    // sharedContext: "header1",
-    type: "tl;dr",
-    // length: "short",
+    const session = await ai.languageModel.create({
+    systemPrompt: "Pretend to be an eloquent hamster.",
     monitor(m) {
       m.addEventListener("downloadprogress", e => {
         console.log(`Downloaded ${e.loaded} of ${e.total} bytes.`);
@@ -32,19 +23,23 @@ async function summary (){
   
   try{
     document.getElementById("progress").innerHTML = "Summarizing Page...";
-    const {available, defaultTemperature, defaultTopK, maxTopK } = await ai.summarizer.capabilities();
+    const {available, defaultTemperature, defaultTopK, maxTopK } = await ai.languageModel.capabilities();
 
+    
+  
     if (available !== "no") {
       const session = await ai.languageModel.create();
     
       // Prompt the model and wait for the whole result to come back. 
       let content = await readPage();
       content = formatToEnglishText(content);
+      // probably need a way to reduce the amount of content tokens to less that 1000 for the prompt to work
       console.log(content);
-      let result = await summarizer.summarize(articleEl.textContent, {
-        context: content
-      });
-      // result = formatToEnglishText(result);
+      
+
+
+      let result = await session.prompt(`Summarize this: \" ${content} \"`);
+      result = formatToEnglishText(result);
       console.log(result);
       summaryText.innerHTML = `<h1>Title</h1>\n <p>${result}</p>`;
       document.getElementById("progress").innerHTML = "";
@@ -58,6 +53,10 @@ async function summary (){
     document.getElementById("progress").innerHTML = "Error: Failed to summarize page. " + error;
   }
   
+}
+
+function getText(){
+  return document.body.innerText
 }
 
 function formatToEnglishText(text) {
@@ -106,29 +105,6 @@ async function readPage(){
 
 powerButton = document.getElementById("powerButton")
 powerButton.addEventListener("click", summary)
-
-
-async function test(){
-  let textContent = "This is a test text that will be displayed"
-  const summarizerCapabilities = await ai.summarizer.capabilities();
-const supportsTeaser = summarizerCapabilities.createOptionsAvailable({ type: "teaser" });
-
-if (supportsTeaser !== "no") {
-  // We're good! Let's do the summarization using the built-in API.
-  if (supportsTeaser === "after-download") {
-    console.log("Sit tight, we need to do some downloading...");
-  }
-
-  const summarizer = await ai.summarizer.create({ type: "teaser" });
-  console.log(await summarizer.summarize(articleEl.textContent));
-} else {
-  // Either the API overall, or the teaser type, is not available.
-  // Use the cloud.
-  console.log(await doCloudSummarization(articleEl.textContent));
-}
-}
-
-test()
 
 
 
