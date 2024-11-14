@@ -1,26 +1,33 @@
 {
-    "manifest_version": 3,
-    "name": "AI Summary",
-    "version": "1.0",
-    "description": "Add the reading time to Chrome Extension documentation articles",
-    "action": {
+  "manifest_version": 3,
+  "name": "AI Summary",
+  "version": "1.0",
+  "description": "Add the reading time to Chrome Extension documentation articles",
+
+  "action": {
     "default_popup": "popup.html",
     "default_icon": "images/icon-128-ina.png"
   },
   "permissions": [
-    "activeTab", "scripting"
-],
+    "activeTab", "scripting", "storage"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
 
-    "content_scripts": [
+
+  "content_scripts": [
     {
-      "js": ["scripts/ai.js"],
+      "js": [ "Readability.js", "ai.js"],
       "matches": [
         "https://developer.chrome.com/docs/extensions/*",
-        "https://developer.chrome.com/docs/webstore/*"
+        "https://developer.chrome.com/docs/webstore/*",
+        "https://*/*"
       ]
     }
   ]
-  }
+
+}
 
   
     
