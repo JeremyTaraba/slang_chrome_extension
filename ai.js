@@ -1,10 +1,4 @@
 
-// TODO: Clicking on it again should replace the old summary text with the new summary
-
-//TODO: try using the newContent from readability to get the p elements like in readPage
-
-// if this doesnt work then make it work for youtube comments only like how the timer works
-
 // Used to limit how much text we summarize at a time
 const MAX_MODEL_CHARS = 4000;
 
@@ -85,7 +79,8 @@ function replaceDoubleQuotes(text) {
 
 async function summarizePage(page){ // page is already formatted
 
-  // Check if the AI language model is available
+  try{
+    // Check if the AI language model is available
   const canSummarize = await ai.summarizer.capabilities();
   let summarizer;
   if (canSummarize && canSummarize.available !== 'no') {
@@ -95,7 +90,6 @@ async function summarizePage(page){ // page is already formatted
     } else {
       // The summarizer can be used after the model download.
       summarizer = await ai.summarizer.create();
-      alert("AI Summarization is being downloaded")
       summarizer.addEventListener('downloadprogress', (e) => {
           console.log(e.loaded, e.total);
       });
@@ -103,21 +97,22 @@ async function summarizePage(page){ // page is already formatted
     }
   } else {
       // The summarizer can't be used at all.
-      alert("AI Summarization is not supported")
+      return "AI Summarization is not supported";
   }
 
   const result = await summarizer.summarize(page);
   console.log(result);
 
-
-
-
-
-
-
   // Destroy the summarizer to release resources
   summarizer.destroy();
 
+  return result;
+  }
+  catch (error) {
+    console.error("Failed to summarize page:", error);
+    return "Failed to summarize page";
+  }
+  
 }
 
 
@@ -192,6 +187,7 @@ async function getDomOfActiveTab() {
   return res;
 }
 
+
 function matchYoutubeUrl(url) {
   var p = /^(?:https?:\/\/)?(?:m\.|www\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))((\w|-){11})(?:\S+)?$/;
   if(String(url).match(p)){
@@ -215,37 +211,32 @@ function waitForEl(el) {
 }
 
 
+function isDarkMode() {
+  return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
+
 // try to inject into youtube page
-function youtubeSummary(){
-  // want to insert the summary in the comment section after "sort by" text on youtube
-  const sortBy = document.querySelector('tp-yt-paper-button');
-  console.log(sortBy)
-    // const text = article.textContent;
-    /**
-     * Regular expression to find all "words" in a string.
-     *
-     * Here, a "word" is a sequence of one or more non-whitespace characters in a row. We don't use the
-     * regular expression character class "\w" to match against "word characters" because it only
-     * matches against the Latin alphabet. Instead, we match against any sequence of characters that
-     * *are not* a whitespace characters. See the below link for more information.
-     *
-     * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions
-     */
-    const wordMatchRegExp = /[^\s]+/g;
-    // const words = text.matchAll(wordMatchRegExp);
-    // matchAll returns an iterator, convert to array to get word count
-    // const wordCount = [...words].length;
-    const readingTime = 1;
-    const badge = document.createElement('p');
-    // Use the same styling as the publish information in an article's header
-    badge.classList.add('color-secondary-text', 'type--caption');
-    badge.textContent = `⏱️ ${readingTime} min read`;
+async function youtubeSummary(){
+  const comments = "Dang, I went straight for a topological sort approach to this question. This video's explanation is a great reminder of how easy it is to overthink things if you only memorise algorithms without thinking a bit about the problem itself."
+
+  const summary = await summarizePage(comments)
   
-    // Support for API reference docs
-    const heading = document.querySelector('tp-yt-paper-button');
-  
-    // https://developer.mozilla.org/en-US/docs/Web/API/Element/insertAdjacentElement
-    (heading).insertAdjacentElement('afterend', badge);
+    
+  const badge = document.createElement('p');
+  // Use the same styling as the publish information in an article's header
+  badge.classList.add('yt-core-attributed-string', 'type--caption');
+  badge.style.fontSize = "14px";
+  if(isDarkMode()){
+    badge.style.color = "white"
+  }
+  badge.textContent = `🤖 Comment Summary: ${summary}`;
+
+  // Support for API reference docs
+  const position = document.querySelector('ytd-item-section-renderer');
+  console.log(position)
+  // https://developer.mozilla.org/en-US/docs/Web/API/Element/insertAdjacentElement
+  position.insertAdjacentElement('afterbegin', badge);
 
   
 }
@@ -276,6 +267,5 @@ if (onYoutube){
 
 
 
-
-powerButton = document.getElementById("powerButton")
-powerButton.addEventListener("click", summary)
+// powerButton = document.getElementById("powerButton")
+// powerButton.addEventListener("click", summary)
