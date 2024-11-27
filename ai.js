@@ -215,9 +215,29 @@ function isDarkMode() {
   return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
 }
 
+function getYoutubeComments(){
+  // Select all elements matching the selector
+  const elements = document.querySelectorAll('#content-text'); 
+  console.log(elements)
+
+  var size = elements.length;
+
+  // Get the first 10 elements
+  if (size > 10){
+    const top10Elements = Array.from(elements).slice(0, 9); 
+  }
+  else{
+    const top10Elements = Array.from(elements).slice(0, size); 
+  }
+  
+}
+
 
 // try to inject into youtube page
 async function youtubeSummary(){
+  // wait 3 seconds for more comments to load
+  await new Promise(r => setTimeout(r, 3000));
+  getYoutubeComments()
   const comments = "Dang, I went straight for a topological sort approach to this question. This video's explanation is a great reminder of how easy it is to overthink things if you only memorise algorithms without thinking a bit about the problem itself."
 
   const summary = await summarizePage(comments)
@@ -234,7 +254,6 @@ async function youtubeSummary(){
 
   // Support for API reference docs
   const position = document.querySelector('ytd-item-section-renderer');
-  console.log(position)
   // https://developer.mozilla.org/en-US/docs/Web/API/Element/insertAdjacentElement
   position.insertAdjacentElement('afterbegin', badge);
 
