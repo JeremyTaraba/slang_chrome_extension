@@ -1,6 +1,9 @@
 
 // Used to limit how much text we summarize at a time
 const MAX_MODEL_CHARS = 4000;
+//TODO: make token limit on grabbing text and cut off excess characters
+//TODO: make ai refresh if the youtube url changes
+//TODO: make the formatting of the summary better, maybe change it so it doesn't say author, look up "js nlg" for natural language generation
 
 async function summary (){
   document.getElementById("progress").innerHTML = "Getting Model...";
@@ -78,10 +81,14 @@ function replaceDoubleQuotes(text) {
 }
 
 async function summarizePage(page){ // page is already formatted
+  var type = "TL;DR";
+  var format = "Plain text";
+  var length = "Short";
 
   try{
     // Check if the AI language model is available
   const canSummarize = await ai.summarizer.capabilities();
+  console.log("capabilities: ",canSummarize);
   let summarizer;
   if (canSummarize && canSummarize.available !== 'no') {
     if (canSummarize.available === 'readily') {
@@ -89,7 +96,7 @@ async function summarizePage(page){ // page is already formatted
       summarizer = await ai.summarizer.create();
     } else {
       // The summarizer can be used after the model download.
-      summarizer = await ai.summarizer.create();
+      summarizer = await ai.summarizer.create({ type, format, length });
       summarizer.addEventListener('downloadprogress', (e) => {
           console.log(e.loaded, e.total);
       });
@@ -221,15 +228,29 @@ function getYoutubeComments(){
   console.log(elements)
 
   var size = elements.length;
-
+  var top10Elements
   // Get the first 10 elements
   if (size > 10){
-    const top10Elements = Array.from(elements).slice(0, 9); 
+    top10Elements = Array.from(elements).slice(0, 9); 
   }
   else{
-    const top10Elements = Array.from(elements).slice(0, size); 
+    top10Elements = Array.from(elements).slice(0, size); 
   }
-  
+  return top10Elements;
+}
+
+function consolidateComments(listOfComments){
+  let consolidatedComments = ""
+  for(let i = 0; i < listOfComments.length; i++){
+    consolidatedComments += listOfComments[i].innerText + "\n\n";
+  }
+  // loop here for each char in comments
+  if (consolidatedComments.length > MAX_MODEL_CHARS) {
+    consolidatedComments = consolidatedComments.slice(0, MAX_MODEL_CHARS - 3) + "...";  // truncate the text to fit the model input size
+  }
+
+  console.log(consolidatedComments);
+  return consolidatedComments;
 }
 
 
@@ -237,8 +258,8 @@ function getYoutubeComments(){
 async function youtubeSummary(){
   // wait 3 seconds for more comments to load
   await new Promise(r => setTimeout(r, 3000));
-  getYoutubeComments()
-  const comments = "Dang, I went straight for a topological sort approach to this question. This video's explanation is a great reminder of how easy it is to overthink things if you only memorise algorithms without thinking a bit about the problem itself."
+  
+  const comments = consolidateComments(getYoutubeComments())
 
   const summary = await summarizePage(comments)
   
