@@ -96,13 +96,13 @@ function isDarkMode() {
 }
 
 function getYoutubeComments(){
-  // get the comments that have loaded, up to 15
+  // get the comments that have loaded, up to 20
   const elements = document.querySelectorAll('#content-text'); 
   // console.log(elements)
 
   var size = elements.length;
   var topElements
-  // Get the first 15 elements
+  // Get the first 20 elements
   if (size > 20){
     topElements = Array.from(elements).slice(0, 14); 
   }
