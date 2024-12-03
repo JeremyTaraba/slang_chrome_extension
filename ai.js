@@ -1,9 +1,10 @@
 
 // Used to limit how much text we summarize at a time
 const MAX_MODEL_CHARS = 4000;
-//TODO: make ai refresh if the youtube url changes
+
 //TODO: make summary from third person to first person, look up "js nlg" for natural language generation
-//TODO: remove urls from the comments
+//TODO: if ai hasnt loaded yet and you change the page then the ai will load the old summary not reload a new one
+//TODO: going back to previous page does not refresh the summary (doesnt get triggered by any event listeners)
 
 async function summarizePage(page){ // page is already formatted
 
@@ -42,8 +43,8 @@ async function summarizePage(page){ // page is already formatted
   return result;
   }
   catch (error) {
-    console.error("Failed to summarize page:", error);
-    return "Failed to summarize page";
+    console.error("Failed to summarize:", error);
+    return "Failed to summarize";
   }
   
 }
@@ -59,20 +60,15 @@ function formatToEnglishText(text) {
   //Step 3: Remove asterisk characters
   text = text.replace(/\*/g, '');
 
+  // Step 4: Remove urls
+  text = text.replace(/(https?:\/\/[^\s]+)/g, '');
+
   // Step 4: Capitalize the start of each sentence
   text = text.replace(/(^\s*\w|[\.\!\?]\s*\w)/g, (c) => c.toUpperCase());
 
   return text;
 }
 
-
-function matchYoutubeUrl(url) {
-  var p = /^(?:https?:\/\/)?(?:m\.|www\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))((\w|-){11})(?:\S+)?$/;
-  if(String(url).match(p)){
-      return true;
-  }
-  return false;
-}
 
 
 
@@ -94,7 +90,7 @@ function isDarkMode() {
 }
 
 function getYoutubeComments(){
-  // Select all elements matching the selector
+  // get the comments that have loaded, up to 15
   const elements = document.querySelectorAll('#content-text'); 
   console.log(elements)
 
@@ -129,8 +125,22 @@ function consolidateComments(listOfComments){
 }
 
 
-// try to inject into youtube page
+// try to create and inject summary into youtube page
 async function youtubeSummary(){
+
+  var badge = document.getElementById('yt-summarizer-badge');
+  if (!badge) {
+    badge = document.createElement('p');
+    // Use the same styling as the publish information in an article's header
+    badge.classList.add('yt-core-attributed-string', 'type--caption');
+    badge.id = 'yt-summarizer-badge';
+    badge.style.fontSize = "14px";
+  }
+  else{
+    // blank it out as the ai summarizes
+    badge.innerHTML = "";
+  }
+
   // wait 3 seconds for more comments to load
   await new Promise(r => setTimeout(r, 3000));
   
@@ -138,11 +148,8 @@ async function youtubeSummary(){
 
   var summary = await summarizePage(comments)
   summary = formatToEnglishText(summary);
-    
-  const badge = document.createElement('p');
-  // Use the same styling as the publish information in an article's header
-  badge.classList.add('yt-core-attributed-string', 'type--caption');
-  badge.style.fontSize = "14px";
+  
+  
   if(isDarkMode()){
     badge.style.color = "white"
   }
@@ -158,37 +165,28 @@ async function youtubeSummary(){
 
 
 
-window.onload = function(){
-  // make sure we are on youtube
-  var onYoutube = false;
-  const currentUrl = new URL(window.location.href);
-  if (matchYoutubeUrl(currentUrl)){
-    console.log("On Youtube")
-    onYoutube = true;
-  }
-  else{
-    console.log("Not on Youtube")
-  }
-
-  if (onYoutube){
+window.onload = function(){  
     // wait for comments to appear
     waitForEl("#comments #header-author").then(() => {
       console.log("comments should be loaded")
       youtubeSummary();
     });
-  }
 };
 
-function afterNavigate() {
-  if ('/watch' === location.pathname) {
-      alert('Watch page!');
+
+function listen() {
+  console.log("navigation changed");
+
+  // blank out old badge
+  var badge = document.getElementById('yt-summarizer-badge');
+  if (badge) {
+    badge.innerHTML = '';
   }
+  waitForEl("#comments #header-author").then(() => {
+    console.log("comments should be loaded")
+    youtubeSummary();
+  });
 }
-(document.body || document.documentElement).addEventListener('transitionend',
-function(/*TransitionEvent*/ event) {
-  if (event.propertyName === 'width' && event.target.id === 'progress') {
-      afterNavigate();
-  }
-}, true);
-// After page load
-afterNavigate();
+
+// listen for changes in yt navigation
+document.addEventListener('yt-navigate-start', listen);
