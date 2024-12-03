@@ -98,7 +98,7 @@ function isDarkMode() {
 function getYoutubeComments(){
   // get the comments that have loaded, up to 15
   const elements = document.querySelectorAll('#content-text'); 
-  console.log(elements)
+  // console.log(elements)
 
   var size = elements.length;
   var topElements

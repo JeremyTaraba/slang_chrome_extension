@@ -18,13 +18,13 @@
     "activeTab", "scripting", "storage"
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "scripts/background.js"
   },
 
 
   "content_scripts": [
     {
-      "js": [ "ai.js"],
+      "js": [ "scripts/content.js"],
       "matches": [ "*://*.youtube.com/*" ]
     }
   ]
