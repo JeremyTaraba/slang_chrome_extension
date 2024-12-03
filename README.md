@@ -1,3 +1,5 @@
+![Extension Logo](logo512.png "Extension Logo")
+
 # YouTube AI Summary Chrome Extension
 
 A Chrome extension that summarizes the Youtube comment section on Youtube videos using Google's Gemini Nano. Works for the most part although has some bugs here and there
