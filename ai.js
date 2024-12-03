@@ -1,17 +1,20 @@
 
+
+//TODO: if ai hasnt loaded yet and you change the page then the ai will load the old summary not reload a new one
+//TODO: going back to previous page does not refresh the summary (doesnt get triggered by any event listeners)
+
+
 // Used to limit how much text we summarize at a time
 const MAX_MODEL_CHARS = 4000;
 
-//TODO: make summary from third person to first person, look up "js nlg" for natural language generation
-//TODO: if ai hasnt loaded yet and you change the page then the ai will load the old summary not reload a new one
-//TODO: going back to previous page does not refresh the summary (doesnt get triggered by any event listeners)
+
 
 async function summarizePage(page){ // page is already formatted
 
   // i don't know if these actually work
   var type = "TL;DR";
   var format = "Plain text";
-  var length = "Medium";
+  var length = "Small";
 
   try{
     // Check if the AI language model is available
@@ -63,7 +66,10 @@ function formatToEnglishText(text) {
   // Step 4: Remove urls
   text = text.replace(/(https?:\/\/[^\s]+)/g, '');
 
-  // Step 4: Capitalize the start of each sentence
+  //Step 5: Remove timestamps
+  text = text.replace(/\d{1,2}:\d{2}/g, '');
+
+  // Step 6: Capitalize the start of each sentence
   text = text.replace(/(^\s*\w|[\.\!\?]\s*\w)/g, (c) => c.toUpperCase());
 
   return text;
@@ -97,7 +103,7 @@ function getYoutubeComments(){
   var size = elements.length;
   var topElements
   // Get the first 15 elements
-  if (size > 15){
+  if (size > 20){
     topElements = Array.from(elements).slice(0, 14); 
   }
   else{
@@ -120,18 +126,23 @@ function consolidateComments(listOfComments){
     consolidatedComments = consolidatedComments.slice(0, MAX_MODEL_CHARS - 3) + "...";  // truncate the text to fit the model input size
   }
 
-  console.log(consolidatedComments);
+  // console.log(consolidatedComments);
   return consolidatedComments;
 }
 
 
 // try to create and inject summary into youtube page
 async function youtubeSummary(){
-
+  var isExtensionOn = await readLocalStorage('onOrOff');
+  console.log(isExtensionOn);
+  if(!isExtensionOn){
+    return;
+  }
+  
   var badge = document.getElementById('yt-summarizer-badge');
   if (!badge) {
     badge = document.createElement('p');
-    // Use the same styling as the publish information in an article's header
+    // try to use the same styling
     badge.classList.add('yt-core-attributed-string', 'type--caption');
     badge.id = 'yt-summarizer-badge';
     badge.style.fontSize = "14px";
@@ -160,33 +171,53 @@ async function youtubeSummary(){
   // https://developer.mozilla.org/en-US/docs/Web/API/Element/insertAdjacentElement
   position.insertAdjacentElement('afterbegin', badge);
 
-  
+  // when its done, signal to loadingSummary
+  return false;
 }
 
 
 
 window.onload = function(){  
-    // wait for comments to appear
-    waitForEl("#comments #header-author").then(() => {
-      console.log("comments should be loaded")
-      youtubeSummary();
-    });
+  
+  // wait for comments to appear
+  waitForEl("#comments #header-author").then(() => {
+    console.log("comments should be loaded")
+    youtubeSummary();
+  });
+  
+    
 };
 
-
+// navigated to new video, rerun the summarizer
 function listen() {
-  console.log("navigation changed");
-
+  
   // blank out old badge
   var badge = document.getElementById('yt-summarizer-badge');
   if (badge) {
     badge.innerHTML = '';
   }
+  // wait for comments
   waitForEl("#comments #header-author").then(() => {
     console.log("comments should be loaded")
     youtubeSummary();
   });
+  
+  
 }
 
 // listen for changes in yt navigation
 document.addEventListener('yt-navigate-start', listen);
+
+
+// general case to read storage
+const readLocalStorage = async (key) => {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get([key], function (result) {
+      if (result[key] === undefined) {
+        reject();
+      } else {
+        resolve(result[key]);
+      }
+    });
+  });
+};

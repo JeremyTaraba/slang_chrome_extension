@@ -1,11 +1,24 @@
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.action === "storeArticle") {
-      // Store the article data locally or do something with it
-      chrome.storage.local.set({ article: message.data }, () => {
-        console.log("Article stored in background:", message.data);
-      });
-      sendResponse({ status: "success" });
-    }
-    return true; // Keeps the message channel open for sendResponse
-  });
-  
+// check storage if extension is on or off
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.storage.local.set({ 'onOrOff': true }, result => {
+      console.log("On Installed Set value to on")
+  })
+})
+
+// toggle extension on or off (not actualy using this var for anything)
+var isExtensionOn = true;
+
+chrome.storage.onChanged.addListener(function (changes, area) {
+  if (area === 'local' && changes.onOrOff) {
+      console.log(changes.onOrOff.newValue)
+      // extension is on
+      if (changes.onOrOff.newValue) {
+         isExtensionOn = true;
+      }
+      // extension is off
+      else {
+          console.log("Extension Is Off")
+          isExtensionOn = false;
+      }
+  }
+})
