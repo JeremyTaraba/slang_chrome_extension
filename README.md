@@ -10,3 +10,4 @@ A Chrome extension that summarizes the Youtube comment section on Youtube videos
 - Using the forward and back buttons do not trigger the AI to re-summarize. Whatever summary was there will stay there for moving forward and back
 - The output of the AI summary doesn't sound as natural as I would want it to be. It likes to say "The author..." alot
 - Setting the type, format, and length for the Summarizer doesn't seem to do anything. (I probably did it wrong)
+- The way youtube loads will sometimes load the video but keep the comments from a previous video for a split second, this causes the summarizer to use the comments from the old video
